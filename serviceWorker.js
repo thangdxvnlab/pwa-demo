@@ -152,6 +152,12 @@ self.addEventListener('push', (event) => {
     ]
   };
 
+  if (event.data) {
+    var data = event.data.json();
+    title = data.notification.title;
+    body = data.notification;
+  }
+
   event.waitUntil(self.registration.showNotification(title, body));
 });
 

@@ -5,6 +5,14 @@
     .then(function(registration) {
       console.info('Service worker is registered!');
       checkForPageUpdate(registration); // To check if new content is updated or not
+
+      // request permission for push notifications
+      Notification.requestPermission(function(result) {
+        if (result !== 'granted') {
+          console.warn('No notification permission granted!');
+        }
+      });
+
     })
     .catch(function(error) {
       console.error('Service worker failed ', error);

@@ -1,8 +1,17 @@
 'use strict';
+require('dotenv').config();
 var express = require('express');
 var bodyParser = require('body-parser');
-var gcm = require('node-gcm');
 var app = express();
+var webpush = require('web-push');
+
+webpush.setVapidDetails(
+  process.env.MAIL_TO,
+  process.env.PUBLIC_VAPID_KEY,
+  process.env.PRIVATE_VAPID_KEY,
+);
+
+var payloads = require('./payloads');
 
 //Here we are configuring express to use body-parser as middle-ware.
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -23,29 +32,39 @@ app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 
+//To send public key to client
+app.get('/vapid_public_key', function (req, res) {
+  res.send(process.env.PUBLIC_VAPID_KEY);
+});
+
 //To receive push request from client
 app.post('/send_notification', function (req, res) {
-  if (!req.body) {
-    res.status(400);
+  if (!req.body || !req.body.endpoint) {
+    res.status(400).send('Invalid request');
+    return;
   }
-
-  var message = new gcm.Message();
-  var temp = req.body.endpoint.split('/');
-  var regTokens = [temp[temp.length - 1]];
-
-  var sender = new gcm.Sender('AIzaSyCjrU5SqotSg2ybDLK_7rMMt9Rv0dMusvY'); //Replace with your GCM API key
-
-  // Now the sender can be used to send messages
-  sender.send(message, { registrationTokens: regTokens }, function (error, response) {
-  	if (error) {
-      console.error(error);
-      res.status(400);
+  
+  const pushConfig = {
+    endpoint: req.body.endpoint,
+    keys: {
+      auth: req.body.keys.auth,
+      p256dh: req.body.keys.p256dh
     }
-  	else {
-     	console.log(response);
+  };
+
+  // get random payload
+  let random = Math.floor(Math.random() * payloads.length);
+  let payload = payloads[random];
+  
+  webpush.sendNotification(pushConfig, JSON.stringify(payload))
+    .then(function() {
       res.status(200);
-    }
-  });
+
+    })
+    .catch(function(error) {
+      console.error(error);
+      res.status(500);
+    });
 });
 
 app.listen(process.env.PORT || 3000, function() {

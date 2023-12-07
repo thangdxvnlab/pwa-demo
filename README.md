@@ -4,6 +4,20 @@
 
 *A demo for progressive web application with features like offline, push notifications, background sync etc,*
 
+### UPDATE
+Please create .env from .env.example
+```bash
+cp .env.example .env
+```
+
+generate keys:
+```bash
+# if not install web-push
+npm i -g web push
+
+web-push generate-vapid-keys
+```
+
 ### [Live](https://demopwa.surge.sh)
 
 ### Installation
